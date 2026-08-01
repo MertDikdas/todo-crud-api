@@ -40,11 +40,11 @@ def home():
         }
 
 @app.get("/tasks", summary="List all tasks")
-def getTasks():
+def get_tasks():
     return tasks;
 
 @app.get("/tasks/{id}", summary="Get a task by ID")
-def getTaskById(id: int):
+def get_task_by_id(id: int):
     
     for task in tasks:
         if task["id"] == id:
@@ -57,6 +57,7 @@ def getTaskById(id: int):
 @app.post("/tasks", summary="Create a new task")
 def create_task(task: CreateTask):
 
+    
     if task.title is None or not task.title.strip():
         return JSONResponse(
             status_code=400,
@@ -68,7 +69,7 @@ def create_task(task: CreateTask):
 
     created_task = {
         "id": task_count,
-        "title": task.title,
+        "title": task.title.strip(),
         "done": False
     }
 
@@ -80,7 +81,13 @@ def create_task(task: CreateTask):
     )
 
 @app.put("/tasks/{id}", summary="Update an existing task")
-def updateTask(id : int, update : UpdateTask):
+def update_task(id : int, update : UpdateTask):
+    if update.title is None and update.done is None:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Invalid body"}
+        )
+
     if update.title is not None and not update.title.strip():
         return JSONResponse(
             status_code=400,
@@ -94,7 +101,7 @@ def updateTask(id : int, update : UpdateTask):
             if update.done is not None:
                 task["done"] = update.done
             return JSONResponse(
-                status_code=201,
+                status_code=200,
                 content=task
             )
     return JSONResponse(
@@ -103,7 +110,7 @@ def updateTask(id : int, update : UpdateTask):
     )
 
 @app.delete("/tasks/{id}",summary="Delete a task")
-def deleteTask(id: int):
+def delete_task(id: int):
     for task in tasks:
         if task["id"]==id:
             tasks.remove(task)
