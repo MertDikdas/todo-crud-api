@@ -40,8 +40,11 @@ def home():
         }
 
 @app.get("/tasks", summary="List all tasks")
-def get_tasks():
-    return tasks;
+def get_tasks(done: Optional[bool] = None):
+    if done is None:
+        return tasks
+
+    return [task for task in tasks if task["done"] == done]
 
 @app.get("/tasks/{id}", summary="Get a task by ID")
 def get_task_by_id(id: int):
@@ -53,6 +56,8 @@ def get_task_by_id(id: int):
         status_code=404,
         content={"error": f"Task {id} not found"}
     )
+
+
 
 @app.post("/tasks", summary="Create a new task")
 def create_task(task: CreateTask):
