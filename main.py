@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from dataclasses import dataclass
 
 app = FastAPI()
 
@@ -18,6 +20,12 @@ tasks = [
         "done": True
     }
 ]
+
+task_count = 3
+
+
+class CreateTask(BaseModel):
+    title: str
 
 @app.get("/")
 def home():
@@ -42,7 +50,33 @@ def getTaskById(id: int):
         content={"error": f"Task {id} not found"}
     )
 
+@app.post("/tasks")
+def create_task(task: CreateTask):
+
+    if task.title is None or not task.title.strip():
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Invalid title"}
+        )
+
+    global task_count
+    task_count += 1
+
+    created_task = {
+        "id": task_count,
+        "title": task.title,
+        "done": False
+    }
+
+    tasks.append(created_task)
+
+    return JSONResponse(
+        status_code=201,
+        content=created_task
+    )
+
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
