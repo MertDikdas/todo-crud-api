@@ -66,28 +66,35 @@ def get_task_by_id(id: int):
 
 @app.post("/tasks", summary="Create a new task")
 def create_task(task: CreateTask):
-
-    
     if task.title is None or not task.title.strip():
         return JSONResponse(
             status_code=400,
             content={"error": "Invalid title"}
         )
 
-    global task_count
-    task_count += 1
+    conn = get_connection()
 
-    created_task = {
-        "id": task_count,
-        "title": task.title.strip(),
-        "done": False
-    }
+    cursor = conn.execute(
+        "INSERT INTO tasks (title, done) VALUES (?, ?)",
+        (task.title.strip(), 0)
+    )
 
-    tasks.append(created_task)
+    conn.commit()
+
+    created_id = cursor.lastrowid
+
+    cursor = conn.execute(
+        "SELECT * FROM tasks WHERE id = ?",
+        (created_id,)
+    )
+
+    row = cursor.fetchone()
+
+    conn.close()
 
     return JSONResponse(
         status_code=201,
-        content=created_task
+        content=dict(row)
     )
 
 @app.put("/tasks/{id}", summary="Update an existing task")
