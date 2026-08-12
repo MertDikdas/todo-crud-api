@@ -2,27 +2,14 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 from typing import Optional
+import sqlite3
+
+def get_connection():
+    conn = sqlite3.connect("tasks.db")
+    conn.row_factory = sqlite3.Row
+    return conn
 
 app = FastAPI()
-
-tasks = [
-    {
-        "id" : 1,
-        "title" : "Plan your day",
-        "done" : False
-    },{
-        "id": 2,
-        "title": "Clean the bathroom",
-        "done": False 
-    },{
-        "id": 3,
-        "title": "Go to grocery store",
-        "done": True
-    }
-]
-
-task_count = 3
-
 
 class CreateTask(BaseModel):
     title: str
@@ -41,21 +28,39 @@ def home():
 
 @app.get("/tasks", summary="List all tasks")
 def get_tasks(done: Optional[bool] = None):
+    conn = get_connection()
     if done is None:
-        return tasks
+        tasks = conn.execute("SELECT * FROM tasks")
+    else:
+        tasks = conn.execute(
+            "SELECT * FROM tasks WHERE done = ?",
+            (int(done),)
+            )
 
-    return [task for task in tasks if task["done"] == done]
+    rows = tasks.fetchall()
+    conn.close()
+
+
+    return [dict(row) for row in rows]
 
 @app.get("/tasks/{id}", summary="Get a task by ID")
 def get_task_by_id(id: int):
+    conn = get_connection()
     
-    for task in tasks:
-        if task["id"] == id:
-            return task
-    return JSONResponse(
-        status_code=404,
-        content={"error": f"Task {id} not found"}
+    task =conn.execute(
+        "SELECT * FROM tasks WHERE id = ?",
+        (id,)
     )
+
+    row = task.fetchone()
+
+    conn.close()
+    if row is None:
+        return JSONResponse(
+            status_code=404,
+            content={"error": f"Task {id} not found"}
+        )
+    return dict(row);
 
 
 
