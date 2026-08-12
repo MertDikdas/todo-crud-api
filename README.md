@@ -7,6 +7,17 @@ A simple database-backed To-Do CRUD API built with **FastAPI** and **SQLite**. I
 - Python 3.10 or newer
 - `pip`
 
+## Start Postgresql Container
+
+```bash
+docker run --name taskdb \
+  -e POSTGRES_PASSWORD=dev \
+  -e POSTGRES_DB=tasks \
+  -p 5432:5432 \
+  -v taskdata:/var/lib/postgresql \
+  -d postgres
+```
+
 ## Install and Run
 
 Clone the repository, open its directory, and run:
