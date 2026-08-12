@@ -2,15 +2,9 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 from typing import Optional
-import sqlite3
-from database import init_database
+from database import init_database, get_connection
 
 init_database()
-
-def get_connection():
-    conn = sqlite3.connect("tasks.db")
-    conn.row_factory = sqlite3.Row
-    return conn
 
 app = FastAPI()
 
@@ -32,38 +26,40 @@ def home():
 @app.get("/tasks", summary="List all tasks")
 def get_tasks(done: Optional[bool] = None):
     conn = get_connection()
-    if done is None:
-        tasks = conn.execute("SELECT * FROM tasks")
-    else:
-        tasks = conn.execute(
-            "SELECT * FROM tasks WHERE done = ?",
-            (int(done),)
-            )
 
-    rows = tasks.fetchall()
+    if done is None:
+        cursor = conn.execute("SELECT * FROM tasks")
+    else:
+        cursor = conn.execute(
+            "SELECT * FROM tasks WHERE done = %s",
+            (done,)
+        )
+
+    rows = cursor.fetchall()
     conn.close()
 
-
-    return [dict(row) for row in rows]
+    return rows
 
 @app.get("/tasks/{id}", summary="Get a task by ID")
 def get_task_by_id(id: int):
     conn = get_connection()
-    
-    task =conn.execute(
-        "SELECT * FROM tasks WHERE id = ?",
+
+    cursor = conn.execute(
+        "SELECT * FROM tasks WHERE id = %s",
         (id,)
     )
 
-    row = task.fetchone()
+    row = cursor.fetchone()
 
     conn.close()
+
     if row is None:
         return JSONResponse(
             status_code=404,
-            content={"error": f"Task {id} not found"}
+            content={"error": "Task not found"}
         )
-    return dict(row);
+
+    return row
 
 
 

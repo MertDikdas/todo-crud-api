@@ -11,6 +11,11 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL is not set")
 
+def get_connection():
+    return psycopg.connect(
+        DATABASE_URL,
+        row_factory=psycopg.rows.dict_row
+    )
 
 def init_database():
     with psycopg.connect(DATABASE_URL) as connection:
