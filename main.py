@@ -98,7 +98,8 @@ def create_task(task: CreateTask):
     )
 
 @app.put("/tasks/{id}", summary="Update an existing task")
-def update_task(id : int, update : UpdateTask):
+def update_task(id: int, update: UpdateTask):
+
     if update.title is None and update.done is None:
         return JSONResponse(
             status_code=400,
@@ -110,33 +111,93 @@ def update_task(id : int, update : UpdateTask):
             status_code=400,
             content={"error": "Invalid title"}
         )
-    
-    for task in tasks:
-        if task["id"] == id:
-            if update.title is not None and update.title.strip():
-                task["title"] = update.title.strip()
-            if update.done is not None:
-                task["done"] = update.done
-            return JSONResponse(
-                status_code=200,
-                content=task
-            )
-    return JSONResponse(
-        status_code=404,
-        content={"error": f"Task {id} not found"}
+
+    conn = get_connection()
+
+    cursor = conn.execute(
+        "SELECT * FROM tasks WHERE id = ?",
+        (id,)
     )
 
-@app.delete("/tasks/{id}",summary="Delete a task")
-def delete_task(id: int):
-    for task in tasks:
-        if task["id"]==id:
-            tasks.remove(task)
-            return Response(status_code=204)
-    
-    return JSONResponse(
-        status_code=404,
-        content={"error": f"Task {id} not found"}
+    row = cursor.fetchone()
+
+    if row is None:
+        conn.close()
+        return JSONResponse(
+            status_code=404,
+            content={"error": f"Task {id} not found"}
+        )
+
+
+    current_title = row["title"]
+    current_done = row["done"]
+
+    new_title = (
+        update.title.strip()
+        if update.title is not None
+        else current_title
     )
+
+    new_done = (
+        int(update.done)
+        if update.done is not None
+        else current_done
+    )
+
+
+    conn.execute(
+        """
+        UPDATE tasks
+        SET title = ?, done = ?
+        WHERE id = ?
+        """,
+        (new_title, new_done, id)
+    )
+
+    conn.commit()
+
+    cursor = conn.execute(
+        "SELECT * FROM tasks WHERE id = ?",
+        (id,)
+    )
+
+    updated_row = cursor.fetchone()
+
+    conn.close()
+
+    return JSONResponse(
+        status_code=200,
+        content=dict(updated_row)
+    )
+
+@app.delete("/tasks/{id}", summary="Delete a task")
+def delete_task(id: int):
+
+    conn = get_connection()
+
+    cursor = conn.execute(
+        "SELECT * FROM tasks WHERE id = ?",
+        (id,)
+    )
+
+    row = cursor.fetchone()
+
+    if row is None:
+        conn.close()
+        return JSONResponse(
+            status_code=404,
+            content={"error": f"Task {id} not found"}
+        )
+
+    conn.execute(
+        "DELETE FROM tasks WHERE id = ?",
+        (id,)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return Response(status_code=204)
 
 
 @app.get("/health",summary="Check API health")
