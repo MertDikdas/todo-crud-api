@@ -4,30 +4,24 @@ A simple database-backed To-Do CRUD API built with **FastAPI** and **SQLite**. I
 
 ## Requirements
 
-- Python 3.10 or newer
-- `pip`
+- Docker
+- Docker Compose    
 
-## Start Postgresql Container
+## Run
 
-```bash
-docker run --name taskdb \
-  -e POSTGRES_PASSWORD=dev \
-  -e POSTGRES_DB=tasks \
-  -p 5432:5432 \
-  -v taskdata:/var/lib/postgresql \
-  -d postgres
-```
-
-## Install and Run
-
-Clone the repository, open its directory, and run:
+Copy the example environment file:
 
 ```bash
-pip install -r requirements.txt 
-uvicorn main:app --reload
+cp .env.example .env
 ```
-
-The API will be available at `http://127.0.0.1:8000` and its interactive Swagger documentation at `http://127.0.0.1:8000/docs`.
+Start the application:
+```bash
+docker compose up
+```
+The API is available at:
+```bash
+http://localhost:3000
+```
 
 ## Endpoints
 
