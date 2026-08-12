@@ -3,6 +3,9 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 from typing import Optional
 import sqlite3
+from database import init_database
+
+init_database()
 
 def get_connection():
     conn = sqlite3.connect("tasks.db")

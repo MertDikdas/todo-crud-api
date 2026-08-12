@@ -1,8 +1,6 @@
 # Task API
 
-A simple in-memory To-Do CRUD API built with **FastAPI**. It supports creating, listing, retrieving, updating, and deleting tasks through REST endpoints.
-
-> Task data is stored in memory and resets when the application restarts.
+A simple database-backed To-Do CRUD API built with **FastAPI** and **SQLite**. It supports creating, listing, retrieving, updating, and deleting tasks through REST endpoints.
 
 ## Requirements
 
@@ -14,7 +12,8 @@ A simple in-memory To-Do CRUD API built with **FastAPI**. It supports creating, 
 Clone the repository, open its directory, and run:
 
 ```bash
-pip install -r requirements.txt && uvicorn main:app --reload
+pip install -r requirements.txt 
+uvicorn main:app --reload
 ```
 
 The API will be available at `http://127.0.0.1:8000` and its interactive Swagger documentation at `http://127.0.0.1:8000/docs`.
@@ -71,6 +70,35 @@ FastAPI automatically generates interactive API documentation. After starting th
   "title": "Plan your day",
   "done": false
 }
+```
+
+## Why SQLite?
+
+SQLite was chosen because it:
+
+- Uses a single database file
+- Requires zero database server setup
+- Persists data across application restarts
+- Is simple and lightweight for this project
+
+## Database
+
+The database is stored in:
+
+```text
+tasks.db
+```
+- The file is created automatically when the application starts.
+
+- tasks.db is git-ignored, so every fresh clone creates its own database with three seeded example tasks.
+
+- The database contains the following table:
+```sql
+CREATE TABLE tasks (
+    id INTEGER PRIMARY KEY,
+    title TEXT,
+    done BOOLEAN
+);
 ```
 
 ## Query
