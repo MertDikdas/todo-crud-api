@@ -74,26 +74,22 @@ def create_task(task: CreateTask):
     conn = get_connection()
 
     cursor = conn.execute(
-        "INSERT INTO tasks (title, done) VALUES (?, ?)",
-        (task.title.strip(), 0)
-    )
-
-    conn.commit()
-
-    created_id = cursor.lastrowid
-
-    cursor = conn.execute(
-        "SELECT * FROM tasks WHERE id = ?",
-        (created_id,)
+        """
+        INSERT INTO tasks (title, done)
+        VALUES (%s, %s)
+        RETURNING *
+        """,
+        (task.title.strip(), False)
     )
 
     row = cursor.fetchone()
 
+    conn.commit()
     conn.close()
 
     return JSONResponse(
         status_code=201,
-        content=dict(row)
+        content=row
     )
 
 @app.put("/tasks/{id}", summary="Update an existing task")
@@ -114,7 +110,7 @@ def update_task(id: int, update: UpdateTask):
     conn = get_connection()
 
     cursor = conn.execute(
-        "SELECT * FROM tasks WHERE id = ?",
+        "SELECT * FROM tasks WHERE id = %s",
         (id,)
     )
 
@@ -124,9 +120,8 @@ def update_task(id: int, update: UpdateTask):
         conn.close()
         return JSONResponse(
             status_code=404,
-            content={"error": f"Task {id} not found"}
+            content={"error": "Task not found"}
         )
-
 
     current_title = row["title"]
     current_done = row["done"]
@@ -138,17 +133,16 @@ def update_task(id: int, update: UpdateTask):
     )
 
     new_done = (
-        int(update.done)
+        update.done
         if update.done is not None
         else current_done
     )
 
-
     conn.execute(
         """
         UPDATE tasks
-        SET title = ?, done = ?
-        WHERE id = ?
+        SET title = %s, done = %s
+        WHERE id = %s
         """,
         (new_title, new_done, id)
     )
@@ -156,7 +150,7 @@ def update_task(id: int, update: UpdateTask):
     conn.commit()
 
     cursor = conn.execute(
-        "SELECT * FROM tasks WHERE id = ?",
+        "SELECT * FROM tasks WHERE id = %s",
         (id,)
     )
 
@@ -164,10 +158,7 @@ def update_task(id: int, update: UpdateTask):
 
     conn.close()
 
-    return JSONResponse(
-        status_code=200,
-        content=dict(updated_row)
-    )
+    return updated_row
 
 @app.delete("/tasks/{id}", summary="Delete a task")
 def delete_task(id: int):
@@ -175,23 +166,16 @@ def delete_task(id: int):
     conn = get_connection()
 
     cursor = conn.execute(
-        "SELECT * FROM tasks WHERE id = ?",
+        "DELETE FROM tasks WHERE id = %s",
         (id,)
     )
 
-    row = cursor.fetchone()
-
-    if row is None:
+    if cursor.rowcount == 0:
         conn.close()
         return JSONResponse(
             status_code=404,
-            content={"error": f"Task {id} not found"}
+            content={"error": "Task not found"}
         )
-
-    conn.execute(
-        "DELETE FROM tasks WHERE id = ?",
-        (id,)
-    )
 
     conn.commit()
     conn.close()
