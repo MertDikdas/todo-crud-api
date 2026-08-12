@@ -73,6 +73,12 @@ FastAPI automatically generates interactive API documentation. After starting th
 }
 ```
 
+## Query
+```sql
+SELECT COUNT(*) FROM tasks;
+```
+- It returned the count of the tasks
+
 ## Notes
 
 - New tasks are created with `done` set to `false`.
